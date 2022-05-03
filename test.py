@@ -274,3 +274,19 @@ print('SRCC_std.dev : {}'.format(std_dev_srcc))
 print('PLCC_std.dev : {}'.format(std_dev_lcc))
 
 
+
+
+print('The W')
+
+
+
+
+
+
+
+
+
+
+
+
+
