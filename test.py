@@ -119,65 +119,7 @@ def Conv_block(input_x, block_id, inplanes, planes, flag=0, dim=None):
     return y
 
 
-base_model = ResNet50(include_top=False, weights=None, input_shape=(224, 224, 3))
-base_model.load_weights('basemodel_resnet50.h5')
-# base_model = load_model('./base_model_resnext.h5')
 
-for layer in base_model.layers:
-    layer.trainable = False
-
-x2 = base_model.layers[38].output  # 56x56x256
-x3 = base_model.layers[80].output  # 28x28x512
-x4 = base_model.layers[142].output  # 14x14x1024
-x5 = base_model.layers[174].output  # 7x7x2048
-
-#注意力加权
-x5_temp = UpSampling2D(size=(2, 2))(x5)
-x5_temp = Conv_block(x5_temp, '3', 512, 1024, dim=512)
-w4 = keras.activations.sigmoid(x5_temp)
-x4_plus = Multiply()([w4, x4])
-x4_plus = add([x4, x4_plus])
-
-x4_temp = UpSampling2D(size=(2, 2))(x4_plus)
-x4_temp = Conv_block(x4_temp, '2', 256, 512, dim=256)
-w3 = keras.activations.sigmoid(x4_temp)
-x3_plus = Multiply()([w3, x3])
-x3_plus = add([x3, x3_plus])
-
-x3_temp = UpSampling2D(size=(2, 2))(x3_plus)
-x3_temp = Conv_block(x3_temp, '1', 128, 256, dim=128)
-w2 = keras.activations.sigmoid(x3_temp)
-x2_plus = Multiply()([w2, x2])
-x2_plus = add([x2, x2_plus])
-
-#特征融合
-
-x2_plus = Conv_block(x2_plus, '4', 128, 512, dim=256)
-x3_tempp = UpSampling2D(size=(2, 2))(x3_plus)
-step1 = add([x2_plus, x3_tempp])
-y1 = Conv_block(step1, '5', 256, 1024, flag=1, dim=512)
-
-x4_tempp = UpSampling2D(size=(2, 2))(x4_plus)
-step2 = add([y1, x4_tempp])
-y2 = Conv_block(step2, '6', 512, 2048, flag=1, dim=1024)
-
-x5_tempp = UpSampling2D(size=(2, 2))(x5)
-step3 = add([y2, x5_tempp])
-y3 = Conv_block(step3, '7', 512, 2048, flag=1, dim=1024)
-
-
-# 全连接，多任务
-x = GlobalAveragePooling2D()(y3)
-x1 = Dense(1024, bias_initializer=keras.initializers.Ones(), kernel_initializer='random_normal')(x)
-x1=BatchNormalization(name="FC/BatchNorm1")(x1)
-x1 = Activation('relu')(x1)
-# x1 = Dense(512, bias_initializer=keras.initializers.Ones())(x)
-# x1=BatchNormalization(name="FC/BatchNorm2")(x1)#add
-# x1 = Activation('relu')(x1)
-x = Dropout(0.25)(x1)
-out1 = Dense(10, activation='softmax', name="out1", bias_initializer=keras.initializers.Ones(), kernel_initializer='random_normal')(x)
-
-model = Model(inputs=base_model.input, outputs=out1)
 
 #model.load_weights(finetune_best_weight_file)
 
