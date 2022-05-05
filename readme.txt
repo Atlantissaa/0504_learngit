@@ -5,5 +5,13 @@ b
 
 lalala
 
+<<<<<<< HEAD
 
 jjjj
+=======
+Creating a new branch is quick.
+>>>>>>> dev
+
+
+
+hhhhhhh
